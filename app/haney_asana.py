@@ -1,12 +1,14 @@
-from dataclasses import dataclass
-from dotenv import load_dotenv
-import os
-import asana
-from asana.rest import ApiException
-import pandas as pd
+import json
 import logging
-from typing import Optional
-from typing import NamedTuple
+import os
+from dataclasses import dataclass
+from typing import NamedTuple, Optional
+
+import asana
+import pandas as pd
+from asana.rest import ApiException
+from asana.models.task_response_data import TaskResponseData
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -28,10 +30,13 @@ class SingleOrderTask(NamedTuple):
     company: str
     task_due_date: str
 
+
 @dataclass
 class AsanaHaney:
     workspace_id: str = "15984642679817"
     access_token = os.getenv("ASANA_TOKEN")
+    notes_section_gid: str = "1205454832180324"
+
     task_opt_fields = [
         "actual_time_minutes",
         "approval_status",
@@ -128,15 +133,13 @@ class AsanaHaney:
         "workspace",
         "workspace.name",
     ]  # list[str] | This endpoint returns a compact resource, which excludes some properties by default. To include those optional properties, set this query parameter to a comma-separated list of the properties you wish to include. (optional)
-    
-    
-    #post init
+
+    # post init
     def __post_init__(self):
         configuration = asana.Configuration()
         configuration.access_token = self.access_token
-        object.__setattr__(self,'asana_api',asana.ApiClient(configuration))
-        object.__setattr__(self, 'asana_task_api', asana.TasksApi(self.asana_api))
-        
+        object.__setattr__(self, "asana_api", asana.ApiClient(configuration))
+        object.__setattr__(self, "asana_task_api", asana.TasksApi(self.asana_api))
 
     def test_asana_api(self):
         configuration = asana.Configuration()
@@ -158,7 +161,6 @@ class AsanaHaney:
         project_gid: str,
         task_tuple: SingleOrderTask,
     ) -> None:
-        
         task_name = self.create_customer_task_name(
             first_name=task_tuple.first_name,
             last_name=task_tuple.last_name,
@@ -177,7 +179,7 @@ class AsanaHaney:
                 "notes": task_notes,
                 "assignee": "1201417292460832",
                 "due_on": task_tuple.task_due_date,
-                "memberships.section.gid" : "1205454832180324"
+                # "memberships.section.gid" : "1205454832180324"
             }
         )
         return body
@@ -204,7 +206,9 @@ class AsanaHaney:
         Company: {company}
         """
 
-        return f"""First Name: {task_tuple.first_name}
+        return f"""
+
+        First Name: {task_tuple.first_name}
         Last Name: {task_tuple.last_name}
         Email: {task_tuple.email}
         Total Price: {task_tuple.total_price}
@@ -216,12 +220,43 @@ class AsanaHaney:
         self,
         body: asana.TasksBody,
         opt_fields: Optional[list[str]] = task_opt_fields,
-    ) -> None:
+    ) -> TaskResponseData:
         try:
             api_response = self.asana_task_api.create_task(body, opt_fields=opt_fields)
             logger.info(api_response)
+            return api_response
         except ApiException as e:
             logger.error("Exception when calling TasksApi->create_task: %s\n" % e)
+
+    def get_new_task_gid(self, task_api_response: TaskResponseData) -> str:
+        task_api_response_dict = task_api_response.to_dict()
+        return task_api_response_dict["data"]["gid"]
+
+    def move_task_to_section(
+        self, task_gid: str, section_gid: Optional[str] = notes_section_gid
+    ):
+        try:
+            section_api_client = asana.SectionsApi(self.asana_api)
+
+            body = asana.SectionGidAddTaskBody({"task": task_gid})
+
+            api_response = section_api_client.add_task_for_section(section_gid, body=body)
+            logger.info(api_response)
+            return api_response
+        except ApiException as e:
+            logger.error(
+                "Exception when calling TasksApi->add_task_for_section: %s\n" % e
+            )
+            
+    
+    def get_sections_of_project(self, project_gid: str):
+        """more of a meta function to see what sections are available for a given project
+        can't see this in the actual asana app, but it's available in the api
+
+        Args:
+            project_gid (str): _description_
+        """
+        pass
 
     def create_abanonded_cart_task(self):
         pass
