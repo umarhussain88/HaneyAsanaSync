@@ -12,7 +12,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# create a logger for this module
+
+#TODO create a generic task_delete function that takes the current task and deletes it if the process fails.
+
 fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=fmt, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -235,6 +237,7 @@ class AsanaHaney:
     def move_task_to_section(
         self, task_gid: str, section_gid: Optional[str] = notes_section_gid
     ):
+        #TODO: add param to body to add after a specific task so it stays in order
         try:
             section_api_client = asana.SectionsApi(self.asana_api)
 
