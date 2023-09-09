@@ -28,8 +28,8 @@ if __name__ == "__main__":
     )
     
     
-    asana_api = AsanaHaney(workspace_id='1205454697900007')
-    asana_api.test_asana_api()
+    haney_asana_api = AsanaHaney(workspace_id='1205454697900007')
+    haney_asana_api.test_asana_api()
     
     df = get_single_customer_orders(engine)
     
@@ -38,12 +38,14 @@ if __name__ == "__main__":
     
     for row in df.itertuples(index=None):
         
-        customer_note = asana_api.create_customer_note('1205454651907136', row)
+        customer_note = haney_asana_api.create_customer_note('1205454651907136', row)
         
-        asana_api.create_customer_task(body=customer_note)
+        api_response = haney_asana_api.create_customer_task(body=customer_note)
         
+        task_gid = haney_asana_api.get_new_task_gid(api_response)
+        logger.info(f'New task gid: {task_gid}')
         
-        
-        
+        logger.info('moving task to notes section')
+        haney_asana_api.move_task_to_section(task_gid=task_gid)
         
         
