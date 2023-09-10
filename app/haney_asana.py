@@ -3,14 +3,13 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import NamedTuple, Optional
-
+import sys 
+ 
 import asana
 import pandas as pd
 from asana.rest import ApiException
 from asana.models.task_response_data import TaskResponseData
-from dotenv import load_dotenv
 
-load_dotenv()
 
 
 #TODO create a generic task_delete function that takes the current task and deletes it if the process fails.
@@ -35,9 +34,10 @@ class SingleOrderTask(NamedTuple):
 
 @dataclass
 class AsanaHaney:
-    workspace_id: str = "15984642679817"
-    access_token = os.getenv("ASANA_TOKEN")
-    notes_section_gid: str = "1205454832180324"
+    workspace_id: str
+    access_token: str = os.getenv("ASANA_TOKEN")
+    notes_section_gid: str = os.getenv('NOTES_SECTION_GID')
+    assignee_gid: str = os.getenv('ASSIGNEE_GID')
 
     task_opt_fields = [
         "actual_time_minutes",
@@ -140,6 +140,7 @@ class AsanaHaney:
     def __post_init__(self):
         configuration = asana.Configuration()
         configuration.access_token = self.access_token
+        
         object.__setattr__(self, "asana_api", asana.ApiClient(configuration))
         object.__setattr__(self, "asana_task_api", asana.TasksApi(self.asana_api))
 
@@ -179,9 +180,8 @@ class AsanaHaney:
                 "projects": project_gid,
                 "name": task_name,
                 "notes": task_notes,
-                "assignee": "1201417292460832",
+                "assignee": self.assignee_gid,
                 "due_on": task_tuple.task_due_date,
-                # "memberships.section.gid" : "1205454832180324"
             }
         )
         return body
@@ -229,7 +229,10 @@ class AsanaHaney:
             return api_response
         except ApiException as e:
             logger.error("Exception when calling TasksApi->create_task: %s\n" % e)
-
+            logger.error('Exiting script')
+            sys.exit(1)
+            
+            
     def get_new_task_gid(self, task_api_response: TaskResponseData) -> str:
         task_api_response_dict = task_api_response.to_dict()
         return task_api_response_dict["data"]["gid"]
@@ -241,7 +244,7 @@ class AsanaHaney:
         try:
             section_api_client = asana.SectionsApi(self.asana_api)
 
-            body = asana.SectionGidAddTaskBody({"task": task_gid})
+            body = asana.SectionGidAddTaskBody({"task": task_gid, "insert_after": "1205405874837458"}) # this is the template. 
 
             api_response = section_api_client.add_task_for_section(section_gid, body=body)
             logger.info(api_response)
