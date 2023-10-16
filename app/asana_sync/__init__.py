@@ -1,5 +1,4 @@
-
-USERS = {
+{
   "data": [
     {
       "gid": "1205243157760778",
@@ -27,13 +26,18 @@ USERS = {
       "resource_type": "user"
     },
     {
+      "gid": "1205671543569907",
+      "name": "Chase Garcia",
+      "resource_type": "user"
+    },
+    {
       "gid": "1205243053530486",
       "name": "Em Masotti",
       "resource_type": "user"
     },
     {
       "gid": "1203973944703072",
-      "name": "eric@microfiberwholesale.com",
+      "name": "Eric Winchester",
       "resource_type": "user"
     },
     {
@@ -52,13 +56,8 @@ USERS = {
       "resource_type": "user"
     },
     {
-      "gid": "453406566073793",
-      "name": "lucy",
-      "resource_type": "user"
-    },
-    {
-      "gid": "1205243053620746",
-      "name": "Melissa Homer",
+      "gid": "1205473800248348",
+      "name": "Katrina McKinnon",
       "resource_type": "user"
     },
     {

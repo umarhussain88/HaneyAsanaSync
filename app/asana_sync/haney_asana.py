@@ -3,16 +3,15 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import NamedTuple, Optional
-import sys 
- 
+import sys
+
 import asana
 import pandas as pd
 from asana.rest import ApiException
 from asana.models.task_response_data import TaskResponseData
 
 
-
-#TODO create a generic task_delete function that takes the current task and deletes it if the process fails.
+# TODO: create a generic task_delete function that takes the current task and deletes it if the process fails.
 
 fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=fmt, level=logging.DEBUG)
@@ -36,8 +35,10 @@ class SingleOrderTask(NamedTuple):
 class AsanaHaney:
     workspace_id: str
     access_token: str = os.getenv("ASANA_TOKEN")
-    notes_section_gid: str = os.getenv('NOTES_SECTION_GID')
-    assignee_gid: str = os.getenv('ASSIGNEE_GID')
+    notes_section_gid: str = os.getenv("NOTES_SECTION_GID")
+
+    admin_assignee_section_gid: str = os.getenv("ASSIGNEE_GID")
+    admin_order_entry_section_gid: str = os.getenv("ADMIN_ORDER_ENTRY_SECTION_GID")
 
     task_opt_fields = [
         "actual_time_minutes",
@@ -140,7 +141,7 @@ class AsanaHaney:
     def __post_init__(self):
         configuration = asana.Configuration()
         configuration.access_token = self.access_token
-        
+
         object.__setattr__(self, "asana_api", asana.ApiClient(configuration))
         object.__setattr__(self, "asana_task_api", asana.TasksApi(self.asana_api))
 
@@ -159,6 +160,11 @@ class AsanaHaney:
         except ApiException as e:
             logger.error("Exception when calling UserApi->get_user_by_id: %s\n" % e)
 
+    def get_date_with_offset(self, offset: int) -> str:
+        """gets the current date in the format YYYY-MM-DD"""
+        return (pd.Timestamp.now() - pd.DateOffset(days=offset)).strftime("%Y-%m-%d")
+
+    # TODO: if there is another Asana code project then make the above into a base class and subclass this one.
     def create_customer_note(
         self,
         project_gid: str,
@@ -180,7 +186,7 @@ class AsanaHaney:
                 "projects": project_gid,
                 "name": task_name,
                 "notes": task_notes,
-                "assignee": self.assignee_gid,
+                "assignee": self.admin_assignee_section_gid,
                 "due_on": task_tuple.task_due_date,
             }
         )
@@ -229,32 +235,36 @@ class AsanaHaney:
             return api_response
         except ApiException as e:
             logger.error("Exception when calling TasksApi->create_task: %s\n" % e)
-            logger.error('Exiting script')
+            logger.error("Exiting script")
             sys.exit(1)
-            
-            
+
     def get_new_task_gid(self, task_api_response: TaskResponseData) -> str:
         task_api_response_dict = task_api_response.to_dict()
         return task_api_response_dict["data"]["gid"]
 
     def move_task_to_section(
-        self, task_gid: str, section_gid: Optional[str] = notes_section_gid
+        self,
+        task_gid: str,
+        section_gid: Optional[str] = notes_section_gid,
+        insert_after_task: Optional[str] = "1205405874837458",
     ):
-        #TODO: add param to body to add after a specific task so it stays in order
         try:
             section_api_client = asana.SectionsApi(self.asana_api)
 
-            body = asana.SectionGidAddTaskBody({"task": task_gid, "insert_after": "1205405874837458"}) # this is the template. 
+            body = asana.SectionGidAddTaskBody(
+                {"task": task_gid, "insert_after": insert_after_task}
+            )  # this is the template.
 
-            api_response = section_api_client.add_task_for_section(section_gid, body=body)
+            api_response = section_api_client.add_task_for_section(
+                section_gid, body=body
+            )
             logger.info(api_response)
             return api_response
         except ApiException as e:
             logger.error(
                 "Exception when calling TasksApi->add_task_for_section: %s\n" % e
             )
-            
-    
+
     def get_sections_of_project(self, project_gid: str):
         """more of a meta function to see what sections are available for a given project
         can't see this in the actual asana app, but it's available in the api
@@ -266,3 +276,50 @@ class AsanaHaney:
 
     def create_abanonded_cart_task(self):
         pass
+
+    def get_max_order_number_and_date(self):
+        """gets the current max order number and date and writes it to a table so we know"""
+        pass
+
+    def get_section_tasks_since_date(
+        self, section_gid: str, date_since: Optional[str] = None
+    ) -> list:
+        """gets the tasks in a section from a given date
+
+        Args:
+            section_gid (str): _description_
+        """
+
+        if not date_since:
+            date_since = self.get_date_with_offset(7)
+
+        return self.asana_task_api.get_tasks_for_section(
+            section_gid=section_gid, completed_since = date_since
+        ).data
+
+
+    def assign_incomplete_task(self, task_id : str):
+        
+        task_data = self.asana_task_api.get_task(task_id).to_dict()
+        
+        if task_data['data']['completed'] == False:
+            body = asana.TasksBody(
+                {
+                    "assignee": self.admin_assignee_section_gid,
+                }
+            )
+            
+            self.asana_task_api.update_task(body=body, task_gid=task_id)
+            
+            logger.info(f"Task {task_id} has been assigned to {self.admin_assignee_section_gid}")
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
