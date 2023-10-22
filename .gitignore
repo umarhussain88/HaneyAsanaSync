@@ -1,5 +1,7 @@
 __pycache__/
-.vscode/
+
 .env
 __blobstorage__/*
 __azurite*
+.venv
+.vscode
