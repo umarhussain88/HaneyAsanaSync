@@ -21,7 +21,7 @@ logging.basicConfig(format=fmt, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-@app.timer_trigger(schedule="0 * * */1 *", arg_name="OrderTimer", run_on_startup=True,
+@app.timer_trigger(schedule="0 * * */1 *", arg_name="OrderTimer", run_on_startup=False,
               use_monitor=False) 
 def emailordertimer(OrderTimer: func.TimerRequest) -> None:
     
