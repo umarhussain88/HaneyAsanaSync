@@ -164,7 +164,6 @@ class AsanaHaney:
         """gets the current date in the format YYYY-MM-DD"""
         return (pd.Timestamp.now() - pd.DateOffset(days=offset)).strftime("%Y-%m-%d")
 
-    # TODO: if there is another Asana code project then make the above into a base class and subclass this one.
     def create_customer_note(
         self,
         project_gid: str,
