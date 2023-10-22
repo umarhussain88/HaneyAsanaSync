@@ -11,13 +11,15 @@ logging.basicConfig(format=fmt, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 from dotenv import load_dotenv
 
+logger.info(f'Current env is {os.getenv("ENV")}')
 
-if os.getenv("ENV") == "prod":
-    load_dotenv("app/.env/.env.prod")
-    logger.info("Loading prod env")
-else:
-    load_dotenv("app/.env/.env.dev")
-    logger.info("Loading dev env")
+
+# if os.getenv("ENV") == "prod":
+load_dotenv("OrderSync/.env/.env.prod")
+    # logger.info("Loading prod env")
+# elif os.getenv("ENV") == "dev":
+    # load_dotenv("OrderSync/.env/.env.dev")
+    # logger.info("Loading dev env")
 
 
 if __name__ == "__main__":

@@ -302,7 +302,8 @@ class AsanaHaney:
         
         task_data = self.asana_task_api.get_task(task_id).to_dict()
         
-        if task_data['data']['completed'] == False:
+        if (task_data['data']['completed'] == False 
+            and task_data['data']['assignee']['gid'] != self.admin_assignee_section_gid):
             body = asana.TasksBody(
                 {
                     "assignee": self.admin_assignee_section_gid,
@@ -312,6 +313,10 @@ class AsanaHaney:
             self.asana_task_api.update_task(body=body, task_gid=task_id)
             
             logger.info(f"Task {task_id} has been assigned to {self.admin_assignee_section_gid}")
+        else:
+            logger.info(f"Task {task_id} has already been assigned or completed")
+            logger.info(f"Task data: {task_data['data']['assignee']}")
+            
         
         
         
