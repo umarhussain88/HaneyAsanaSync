@@ -4,12 +4,12 @@ __pycache__/
 __blobstorage__/*
 __azurite*
 .venv
-.vscode
 
 bin
 obj
 csx
 .vs
+.vscode/*
 edge
 Publish
 
