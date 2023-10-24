@@ -7,12 +7,15 @@ from sentry_sdk.integrations.serverless import serverless_function
 
 
 sentry_sdk.init(
-        dsn=os.environ["SENTRY_DSN"],
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for performance monitoring.
-        # We recommend adjusting this value in production.
-        traces_sample_rate=1.0,
-    )
+    dsn=os.environ['SENTRY_DSN'],
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+)
 
 
 app = func.FunctionApp()
@@ -20,8 +23,8 @@ fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=fmt, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
-@app.timer_trigger(schedule="0 * * */1 *", arg_name="OrderTimer", run_on_startup=False,
+@serverless_function
+@app.timer_trigger(schedule="0 * * */1 *", arg_name="OrderTimer", run_on_startup=True,
               use_monitor=False) 
 def emailordertimer(OrderTimer: func.TimerRequest) -> None:
     

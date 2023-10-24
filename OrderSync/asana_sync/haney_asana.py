@@ -10,7 +10,6 @@ import pandas as pd
 from asana.rest import ApiException
 from asana.models.task_response_data import TaskResponseData
 
-
 # TODO: create a generic task_delete function that takes the current task and deletes it if the process fails.
 
 fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -293,37 +292,43 @@ class AsanaHaney:
             date_since = self.get_date_with_offset(7)
 
         return self.asana_task_api.get_tasks_for_section(
-            section_gid=section_gid, completed_since = date_since
+            section_gid=section_gid, completed_since=date_since
         ).data
 
-
-    def assign_incomplete_task(self, task_id : str):
-        
+    def assign_incomplete_task(self, task_id: str):
         task_data = self.asana_task_api.get_task(task_id).to_dict()
-        
-        if (task_data['data']['completed'] == False 
-            and task_data['data']['assignee']['gid'] != self.admin_assignee_section_gid):
+
+        if (
+            task_data["data"]["completed"] == False
+            and not task_data["data"]["assignee"]
+        ):
             body = asana.TasksBody(
                 {
                     "assignee": self.admin_assignee_section_gid,
                 }
             )
-            
+
             self.asana_task_api.update_task(body=body, task_gid=task_id)
-            
-            logger.info(f"Task {task_id} has been assigned to {self.admin_assignee_section_gid}")
+            logger.info(
+                    f"Task {task_id} has been assigned to {self.admin_assignee_section_gid}"
+                )
+
+        elif isinstance(task_data["data"]["assignee"], dict):
+            if (
+                task_data["data"]["assignee"]["gid"] != self.admin_assignee_section_gid
+                and task_data["data"]["completed"] == False
+            ):
+                body = asana.TasksBody(
+                    {
+                        "assignee": self.admin_assignee_section_gid,
+                    }
+                )
+
+                self.asana_task_api.update_task(body=body, task_gid=task_id)
+
+                logger.info(
+                    f"Task {task_id} has been assigned to {self.admin_assignee_section_gid}"
+                )
         else:
             logger.info(f"Task {task_id} has already been assigned or completed")
             logger.info(f"Task data: {task_data['data']['assignee']}")
-            
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
