@@ -1,13 +1,10 @@
-name: Deploy Python project to Azure Function App
+
+name: Manual deployment
 
 on:
-  push:
+  workflow_dispatch:
     branches:
       - main
-env:
-  AZURE_FUNCTIONAPP_NAME: 'AsanaOrderSync'     
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: './OrderSync'          
-  PYTHON_VERSION: '3.11.1'                     
 
 jobs:
   build-and-deploy:
